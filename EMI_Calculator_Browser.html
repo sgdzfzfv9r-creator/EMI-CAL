@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#17365d">
+<title>EMI Calculator</title>
+<style>
+:root{--navy:#17365d;--blue:#245b8f;--bg:#f3f6fb;--card:#fff;--text:#172235;--muted:#65748b;--line:#dce4ef;--green:#16794b;--yellow:#fff5d8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;line-height:1.45}
+header{background:linear-gradient(135deg,#17365d,#24639a);color:white;padding:24px 16px 28px}
+.wrap{max-width:980px;margin:0 auto}
+h1{margin:0;font-size:clamp(25px,5vw,34px);letter-spacing:-.5px}
+header p{margin:8px 0 0;color:#e3eefb;font-size:14px}
+main{max-width:980px;margin:-14px auto 0;padding:0 12px 32px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;margin-bottom:14px;box-shadow:0 5px 18px rgba(23,54,93,.05)}
+h2{font-size:18px;margin:0 0 14px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+label{display:block;font-size:13px;font-weight:650;color:#394960;margin-bottom:6px}
+input,select{width:100%;min-height:46px;border:1px solid #c9d5e5;border-radius:10px;padding:10px 11px;font-size:16px;background:white;color:var(--text)}
+input:focus,select:focus{outline:3px solid #d6e9ff;border-color:#3675b8}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+button{border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;cursor:pointer;min-height:44px}
+.primary{background:var(--navy);color:white}.secondary{background:#e9eff7;color:var(--navy)}
+.results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.metric{background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:13px}
+.metric .label{font-size:12px;color:var(--muted);font-weight:600}
+.metric .value{font-size:clamp(18px,4vw,24px);font-weight:800;letter-spacing:-.4px;margin-top:4px;overflow-wrap:anywhere}
+.metric.main{background:#eaf5ee;border-color:#c8e6d2}.metric.main .value{color:var(--green)}
+.note{font-size:12px;color:var(--muted);margin:12px 0 0}
+.tabletop{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13px}
+th,td{padding:10px 11px;text-align:right;border-bottom:1px solid #e7edf5;white-space:nowrap}
+th{background:#edf3fa;color:#273b55;position:sticky;top:0;z-index:1}
+td:first-child,th:first-child{text-align:center}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:#fafbfd}
+.small{font-size:12px;color:var(--muted)}
+footer{text-align:center;padding:0 16px 24px;color:var(--muted);font-size:12px}
+@media(min-width:700px){.formgrid{grid-template-columns:repeat(4,minmax(0,1fr))}.results{grid-template-columns:repeat(4,minmax(0,1fr))}.card{padding:22px}main{padding-left:18px;padding-right:18px}}
+@media(max-width:390px){.formgrid{grid-template-columns:1fr}.results{grid-template-columns:1fr 1fr}.metric{padding:10px}.metric .value{font-size:18px}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>EMI Calculator</h1><p>Monthly installment, total interest and full repayment schedule — made for your phone.</p></div></header>
+<main>
+<section class="card">
+<h2>Loan details</h2>
+<div class="formgrid">
+  <div><label for="amount">Loan amount (Rs.)</label><input id="amount" type="number" min="1" step="1000" value="3500000" inputmode="decimal"></div>
+  <div><label for="rate">Annual interest rate (%)</label><input id="rate" type="number" min="0" max="100" step="0.01" value="13.5" inputmode="decimal"></div>
+  <div><label for="years">Loan period (years)</label><input id="years" type="number" min="0" max="50" step="1" value="10" inputmode="numeric"></div>
+  <div><label for="months">Extra months</label><input id="months" type="number" min="0" max="11" step="1" value="0" inputmode="numeric"></div>
+  <div><label for="method">Interest method</label><select id="method"><option value="reducing">Reducing balance (EMI)</option><option value="flat">Flat rate</option></select></div>
+  <div><label for="start">First payment date</label><input id="start" type="date" value="2026-11-01"></div>
+  <div><label for="extra">Extra monthly payment (Rs.)</label><input id="extra" type="number" min="0" step="100" value="0" inputmode="decimal"><div class="hint">Optional; reduces balance faster.</div></div>
+</div>
+<div class="actions"><button class="primary" id="calculate">Calculate EMI</button><button class="secondary" id="reset">Reset example</button></div>
+<p class="note">Calculations assume monthly payments and a fixed annual interest rate. Fees, insurance, taxes and bank-specific rounding are excluded.</p>
+</section>
+<section class="card">
+<h2>Calculation results</h2>
+<div class="results">
+  <div class="metric main"><div class="label" id="installmentLabel">Monthly EMI</div><div class="value" id="emi">—</div></div>
+  <div class="metric"><div class="label">Total repayment</div><div class="value" id="total">—</div></div>
+  <div class="metric"><div class="label">Total interest</div><div class="value" id="interest">—</div></div>
+  <div class="metric"><div class="label">Repayment period</div><div class="value" id="term">—</div></div>
+</div>
+<p class="note" id="summary"></p>
+</section>
+<section class="card">
+<div class="tabletop"><div><h2 style="margin-bottom:4px">Repayment schedule</h2><div class="small" id="scheduleInfo">Month-by-month breakdown</div></div><button class="secondary" id="download">Download CSV</button></div>
+<div class="tablewrap" style="margin-top:14px">
+<table><thead><tr><th>No.</th><th>Payment date</th><th>Opening balance</th><th>Payment</th><th>Interest</th><th>Principal</th><th>Closing balance</th></tr></thead><tbody id="schedule"></tbody></table>
+</div>
+<p class="note">Tip: on iPhone, use “Download CSV” to save the schedule and open it in Excel or Numbers.</p>
+</section>
+</main>
+<footer>EMI Calculator • Runs in your browser • No data is uploaded or sent anywhere</footer>
+<script>
+const $ = id => document.getElementById(id);
+let currentRows = [];
+const money = n => new Intl.NumberFormat('en-LK',{style:'currency',currency:'LKR',maximumFractionDigits:2,minimumFractionDigits:2}).format(Number.isFinite(n)?n:0).replace('LKR','Rs.');
+const compactMoney = n => 'Rs. ' + new Intl.NumberFormat('en-LK',{maximumFractionDigits:2,minimumFractionDigits:2}).format(Number.isFinite(n)?n:0);
+function addMonths(date, months) {
+  const d = new Date(date.getTime());
+  const day = d.getDate();
+  d.setDate(1); d.setMonth(d.getMonth()+months);
+  const last = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  d.setDate(Math.min(day,last));
+  return d;
+}
+function dateText(d){return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});}
+function calculate(){
+  const principal = Number($('amount').value);
+  const annualRate = Number($('rate').value)/100;
+  const years = Number($('years').value);
+  const extraMonths = Number($('months').value);
+  const extra = Number($('extra').value||0);
+  const method = $('method').value;
+  const n = Math.round(years*12 + extraMonths);
+  if(!(principal>0) || annualRate<0 || annualRate>1 || n<1 || n>600 || extra<0){
+    alert('Please enter a positive loan amount, a valid interest rate, and a period from 1 to 600 months.'); return;
+  }
+  const r=annualRate/12;
+  let basePayment;
+  if(method==='flat'){
+    basePayment=(principal + principal*annualRate*n/12)/n;
+  } else if(r===0){
+    basePayment=principal/n;
+  } else {
+    basePayment=principal*r/(1-Math.pow(1+r,-n));
+  }
+  let balance=principal, totalPaid=0, totalInterest=0;
+  const rows=[];
+  const first = $('start').value ? new Date($('start').value+'T12:00:00') : new Date();
+  for(let i=1;i<=n && balance>0.005;i++){
+    const opening=balance;
+    let interest= method==='flat' ? principal*annualRate/12 : opening*r;
+    let scheduled=basePayment;
+    let principalPart, payment, closing;
+    if(method==='flat'){
+      principalPart=Math.min(opening, scheduled-interest);
+      payment=Math.min(scheduled+extra, opening+interest);
+      principalPart=Math.min(opening, payment-interest);
+      closing=Math.max(0,opening-principalPart);
+    } else {
+      payment=Math.min(scheduled+extra,opening+interest);
+      principalPart=Math.min(opening,Math.max(0,payment-interest));
+      closing=Math.max(0,opening-principalPart);
+    }
+    if(i===n && closing>0 && method==='reducing'){
+      payment=opening+interest; principalPart=opening; closing=0;
+    }
+    totalPaid+=payment; totalInterest+=interest;
+    rows.push({no:i,date:addMonths(first,i-1),opening,payment,interest,principal:principalPart,closing});
+    balance=closing;
+    if(balance<=0.005) break;
+  }
+  currentRows=rows;
+  $('installmentLabel').textContent=extra>0?'Base installment (before extra)':'Monthly installment';
+  $('emi').textContent=compactMoney(basePayment);
+  $('total').textContent=compactMoney(totalPaid);
+  $('interest').textContent=compactMoney(totalInterest);
+  $('term').textContent=rows.length+' months';
+  $('summary').textContent=(method==='flat'?'Flat-rate calculation selected. ':'Reducing-balance EMI selected. ')+
+    (extra>0?'Extra monthly payment: '+compactMoney(extra)+'. ':'')+
+    'Actual bank figures may differ due to rounding, dates or fees.';
+  $('scheduleInfo').textContent=rows.length+' installments • '+(method==='flat'?'Flat rate':'Reducing balance');
+  const body=$('schedule'); body.innerHTML='';
+  const frag=document.createDocumentFragment();
+  rows.forEach(row=>{
+    const tr=document.createElement('tr');
+    [row.no,dateText(row.date),compactMoney(row.opening),compactMoney(row.payment),compactMoney(row.interest),compactMoney(row.principal),compactMoney(row.closing)].forEach((v,idx)=>{
+      const td=document.createElement('td'); td.textContent=v; tr.appendChild(td);
+    });
+    frag.appendChild(tr);
+  });
+  body.appendChild(frag);
+}
+function reset(){
+  $('amount').value=3500000; $('rate').value=13.5; $('years').value=10; $('months').value=0;
+  $('method').value='reducing'; $('start').value='2026-11-01'; $('extra').value=0; calculate();
+}
+$('calculate').addEventListener('click',calculate);
+$('reset').addEventListener('click',reset);
+$('download').addEventListener('click',()=>{
+  if(!currentRows.length) calculate();
+  const headers=['Installment No.','Payment Date','Opening Balance (Rs.)','Payment (Rs.)','Interest (Rs.)','Principal (Rs.)','Closing Balance (Rs.)'];
+  const lines=[headers,...currentRows.map(r=>[r.no,dateText(r.date),r.opening.toFixed(2),r.payment.toFixed(2),r.interest.toFixed(2),r.principal.toFixed(2),r.closing.toFixed(2)])];
+  const csv=lines.map(row=>row.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='EMI_Repayment_Schedule.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+});
+$('method').addEventListener('change',calculate);
+calculate();
+</script>
+</body>
+</html>
